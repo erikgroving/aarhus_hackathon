@@ -175,10 +175,10 @@
     <Compile Include="Assets\GoogleVR\Scripts\Utilities\GvrIntent.cs" />
     <Compile Include="Assets\GoogleVR\Scripts\Utilities\GvrUIHelpers.cs" />
     <Compile Include="Assets\GoogleVR\Scripts\Video\GvrVideoPlayerTexture.cs" />
-    <Compile Include="Assets\PlayerController.cs" />
     <Compile Include="Assets\Scripts\Game\Bullet.cs" />
     <Compile Include="Assets\Scripts\Game\BulletManager.cs" />
     <Compile Include="Assets\Scripts\Game\Enemy.cs" />
+    <Compile Include="Assets\Scripts\Game\PlayerController.cs" />
     <Compile Include="Assets\Scripts\Game\TranslateWorldSpace.cs" />
     <Compile Include="Assets\Scripts\Game\WorldSpace.cs" />
   </ItemGroup>
