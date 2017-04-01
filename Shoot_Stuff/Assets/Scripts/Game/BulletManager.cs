@@ -77,11 +77,17 @@ public class BulletManager : MonoBehaviour {
             float randX = distanceToPlayer * Mathf.Cos(angle);
             float randZ = distanceToPlayer * Mathf.Sin(angle);
 
-
             GameObject goEnemy = Instantiate(enemyPrefab, new Vector3(randX, 1.5f, randZ), new Quaternion());
             Enemy enemy = goEnemy.GetComponent<Enemy>();
             enemies.Add(enemy);
         }
+    }
+
+    public void DestroyBullet(GameObject bulletToDestroy)
+    {
+        Bullet bullet = bulletToDestroy.GetComponent<Bullet>();
+        Destroy(bulletToDestroy);
+        bullets.Remove(bullet);
     }
 
 }
