@@ -1,12 +1,23 @@
 # CannyWebcam.py
+import argparse
 
 import cv2
 import numpy as np
 import os
 import cv2.cv as cv
+from pythonosc import osc_message_builder
+from pythonosc import udp_client
 
 ###################################################################################################
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--ip", default="127.0.0.1",
+                        help="The ip of the OSC server")
+    parser.add_argument("--port", type=int, default=5005,
+                        help="The port the OSC server is listening on")
+    args = parser.parse_args()
+
+    client = udp_client.SimpleUDPClient(args.ip, args.port)
 
     capWebcam = cv2.VideoCapture(0)         # declare a VideoCapture object and associate to webcam, 0 => use 1st webcam
 
