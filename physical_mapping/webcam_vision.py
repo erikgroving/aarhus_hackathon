@@ -5,19 +5,14 @@ import cv2
 import numpy as np
 import os
 import cv2.cv as cv
-from pythonosc import osc_message_builder
-from pythonosc import udp_client
+from OSC import OSCClient, OSCMessage
+
 
 ###################################################################################################
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--ip", default="127.0.0.1",
-                        help="The ip of the OSC server")
-    parser.add_argument("--port", type=int, default=5005,
-                        help="The port the OSC server is listening on")
-    args = parser.parse_args()
 
-    client = udp_client.SimpleUDPClient(args.ip, args.port)
+    client = OSCClient()
+    client.connect(("localhost", 7110))
 
     capWebcam = cv2.VideoCapture(0)         # declare a VideoCapture object and associate to webcam, 0 => use 1st webcam
 
@@ -48,6 +43,7 @@ def main():
         # print circles
 
         # ensure at least some circles were found
+        osc_circles = []
         if circles is not None:
             # convert the (x, y) coordinates and radius of the circles to integers
             circles = np.round(circles[0, :]).astype("int")
@@ -61,10 +57,12 @@ def main():
                 print y
                 print "Radius is: "
                 print r
-
+                osc_circles.append((x,y))
         cv2.imshow("imgOriginal", imgOriginal)  # show windows
         cv2.imshow("imgCanny", imgCanny)
-        client.send_message("/cam", circles)
+        message = OSCMessage("/cam")
+        message.append(osc_circles)
+        client.send(message)
     # end while
 
     cv2.destroyAllWindows()                 # remove windows from memory
