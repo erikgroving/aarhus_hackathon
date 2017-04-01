@@ -64,6 +64,7 @@ def main():
 
         cv2.imshow("imgOriginal", imgOriginal)  # show windows
         cv2.imshow("imgCanny", imgCanny)
+        client.send_message("/cam", circles)
     # end while
 
     cv2.destroyAllWindows()                 # remove windows from memory
