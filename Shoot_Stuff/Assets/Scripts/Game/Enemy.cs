@@ -6,7 +6,7 @@ public class Enemy : MonoBehaviour {
 
     public int Health { get; set; }
     public Vector2 Position { get; set; }
-    bool isActive = true;
+    public bool isActive = true;
 
     // Use this for initialization
     void Start () {

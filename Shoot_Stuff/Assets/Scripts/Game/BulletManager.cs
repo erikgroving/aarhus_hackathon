@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -19,22 +20,23 @@ public class BulletManager : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-        PopulateRandomEnemies(17f);
+        
     }
 	
 	// Update is called once per frame
 	void Update () {
 
-        float randX = Random.Range(1f, 10f);
-        float randZ = Random.Range(1f, 10f);
+        float randX = UnityEngine.Random.Range(1f, 10f);
+        float randZ = UnityEngine.Random.Range(1f, 10f);
 
         if (spawnBulletsRandomInterval)
         {
             if (bullets.Count < maxBullets)
             {
-                int rand_idx = Random.Range(0, enemies.Count);
+                int rand_idx = UnityEngine.Random.Range(0, enemies.Count);
 
-                SpawnBulletAtPosition(enemies[rand_idx].transform.position);
+                if (enemies.Count > 0)
+                    SpawnBulletAtPosition(enemies[rand_idx].transform.position);
             }
         }
 
@@ -57,7 +59,40 @@ public class BulletManager : MonoBehaviour {
             {
                 bullets.Remove(bulletToRemove);
             }
+
+           
         }
+
+        if (enemies.Count > 0)
+        {
+            List<Enemy> enemiesToRemove = new List<Enemy>();
+
+            foreach (var enemy in enemies)
+            {
+                if (!enemy.isActive)
+                {
+                    enemiesToRemove.Add(enemy);
+                    Destroy(enemy.gameObject);
+                }
+            }
+
+            foreach (var enemyToRemove in enemiesToRemove)
+            {
+                enemies.Remove(enemyToRemove);
+            }
+        }
+
+    }
+
+    internal void DeleteAll()
+    {
+        foreach (var item in enemies)
+        {
+            Destroy(item.gameObject);
+
+
+        }
+        enemies.Clear();
 
     }
 
@@ -69,24 +104,59 @@ public class BulletManager : MonoBehaviour {
         bullets.Add(bullet);
     }
 
-    void PopulateRandomEnemies(float distanceToPlayer)
+    public void PopulateRandomEnemies(float distanceToPlayer)
     {
+        bool[] initialEnemie = new bool[18];
+
+        
+        
         for (int i = 0; i < initialEnemies; i++)
         {
-            float angle = Random.Range(0f, 360f);
+            float angle;
+            do
+            {
+                angle = UnityEngine.Random.Range(0f, 360f);
+            } while (!EnemieIsgod(initialEnemie,angle));
+            Debug.Log((int)angle/20);
+
+
+
             float randX = distanceToPlayer * Mathf.Cos(angle);
             float randZ = distanceToPlayer * Mathf.Sin(angle);
-
+            
+           
+            
             GameObject goEnemy = Instantiate(enemyPrefab, new Vector3(randX, 1.5f, randZ), new Quaternion());
             Enemy enemy = goEnemy.GetComponent<Enemy>();
             enemies.Add(enemy);
         }
     }
 
+    private bool EnemieIsgod(bool[] initialEnemie, float angle )
+    {
+        
+        int binID = (int)angle / 20;
+        int binlow = binID == 0 ? 17 : binID - 1;
+        int binhigh = binID == 17 ? 0 : binID + 1;
+        if (initialEnemie[binID] || initialEnemie[binlow] || initialEnemie[binhigh])
+        {
+            return false;
+        }
+        initialEnemie[binID] = true;
+        return true;
+    }
+
     public void DestroyBullet(GameObject bulletToDestroy)
     {
         Bullet bullet = bulletToDestroy.GetComponent<Bullet>();
         Destroy(bulletToDestroy);
+        bullets.Remove(bullet);
+    }
+
+    public void DestroyBullet(GameObject bulletToDestroy, float timeToWait)
+    {
+        Bullet bullet = bulletToDestroy.GetComponent<Bullet>();
+        Destroy(bulletToDestroy, timeToWait);
         bullets.Remove(bullet);
     }
 
