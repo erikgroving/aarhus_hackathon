@@ -3,6 +3,7 @@
 import cv2
 import numpy as np
 import os
+import cv2.cv as cv
 
 ###################################################################################################
 def main():
@@ -31,7 +32,26 @@ def main():
         cv2.namedWindow("imgOriginal", cv2.WINDOW_NORMAL)        # create windows, use WINDOW_AUTOSIZE for a fixed window size
         cv2.namedWindow("imgCanny", cv2.WINDOW_NORMAL)           # or use WINDOW_NORMAL to allow window resizing
 
-        cv2.imshow("imgOriginal", imgOriginal)         # show windows
+        # detect circles in the image
+        circles = cv2.HoughCircles(imgCanny, cv.CV_HOUGH_GRADIENT, 1, 260, param1=30, param2=65, minRadius=0, maxRadius=0)
+        # print circles
+
+        # ensure at least some circles were found
+        if circles is not None:
+            # convert the (x, y) coordinates and radius of the circles to integers
+            circles = np.round(circles[0, :]).astype("int")
+
+            # loop over the (x, y) coordinates and radius of the circles
+            for (x, y, r) in circles:
+                # time.sleep(0.5)
+                print "Column Number: "
+                print x
+                print "Row Number: "
+                print y
+                print "Radius is: "
+                print r
+
+        cv2.imshow("imgOriginal", imgOriginal)  # show windows
         cv2.imshow("imgCanny", imgCanny)
     # end while
 
