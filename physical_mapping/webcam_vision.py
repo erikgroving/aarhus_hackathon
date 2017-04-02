@@ -6,6 +6,64 @@ import numpy as np
 import os
 import cv2.cv as cv
 from OSC import OSCClient, OSCMessage, OSCServer
+import _winreg as winreg
+import serial
+import time
+
+
+class ServoControl(object):
+    def __init__(self):
+        self.InitSerial('COM7', 9200)
+
+    def VerifySerial(self):
+        self.comports = []
+        self.compath = 'HARDWARE\\DEVICEMAP\\SERIALCOMM'
+        key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, self.compath)
+        for i in range(10):
+            try:
+                port = winreg.EnumValue(key, i)[1]
+
+                try:
+                    serial.Serial(port)  # test open
+                except serial.serialutil.SerialException:
+                    print port, " can't be openend"
+                else:
+                    print port, " Ready"
+                    self.comports.append(port)
+
+            except EnvironmentError:
+                break
+        return
+
+    def InitSerial(self, comport, baudrate):
+        self.arduino = serial.Serial(port=comport,
+                                     baudrate=baudrate,
+                                     bytesize=serial.EIGHTBITS,
+                                     parity=serial.PARITY_NONE,
+                                     stopbits=serial.STOPBITS_ONE,
+                                     timeout=0.1,
+                                     xonxoff=0,
+                                     rtscts=0,
+                                     interCharTimeout=None)
+        try:
+            self.arduino.open()
+        except Exception:
+            if not self.arduino.isOpen(): print("Not Open")
+
+    def WriteToSerial(self, position):
+        if not self.arduino.isOpen():
+            self.arduino.open()
+            time.sleep(0.1)
+        print("Writing")
+
+        position = 90 + position  # Servo range 0-180;
+
+        self.arduino.write(str(position).rjust(3, '0'))
+        time.sleep(0.05)
+        print('Status: Open')
+
+    def CloseSerial(self):
+        self.arduino.close()
 
 
 ###################################################################################################
@@ -18,6 +76,9 @@ def main():
     server = OSCServer(("localhost", 7110))
     server.timeout = 0
     run = True
+
+    # Setup Arduino
+    servo_controller = ServoControl()
 
     # this method of reporting timeouts only works by convention
     # that before calling handle_request() field .timed_out is
@@ -39,6 +100,15 @@ def main():
         print ("Now do something with", user, args[2], args[0], 1 - args[1])
 
     server.addMsgHandler("/unity", user_callback)
+
+    # user script that's called by the game engine every frame
+    def each_frame():
+        # clear timed_out flag
+        server.timed_out = False
+        # handle all pending requests then return
+        while not server.timed_out:
+            server.handle_request()
+
 
     capWebcam = cv2.VideoCapture(0)         # declare a VideoCapture object and associate to webcam, 0 => use 1st webcam
 
