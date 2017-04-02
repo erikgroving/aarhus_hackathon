@@ -13,7 +13,7 @@ import time
 
 class ServoControl(object):
     def __init__(self):
-        self.InitSerial('COM7', 9200)
+        self.InitSerial('COM4', 9200)
 
     def VerifySerial(self):
         self.comports = []
@@ -65,11 +65,131 @@ class ServoControl(object):
     def CloseSerial(self):
         self.arduino.close()
 
+#import myo as libmyo; libmyo.init()
+#import time
+#import sys
+'''
+class Listener(libmyo.DeviceListener):
+    """
+    Listener implementation. Return False from any function to
+    stop the Hub.
+    """
 
+    interval = 0.05  # Output only 0.05 seconds
+
+    def __init__(self, servocontrol):
+        super(Listener, self).__init__()
+        self.orientation = None
+        self.pose = libmyo.Pose.rest
+        self.emg_enabled = False
+        self.locked = False
+        self.rssi = None
+        self.emg = None
+        self.last_time = 0
+        self.current_orientation = None
+        self.orientation_change = False
+        self.servo_control = servocontrol
+
+    def on_connect(self, myo, timestamp, firmware_version):
+        myo.vibrate('short')
+        myo.vibrate('short')
+        myo.request_rssi()
+        myo.request_battery_level()
+
+    def on_rssi(self, myo, timestamp, rssi):
+        self.rssi = rssi
+
+    def on_pose(self, myo, timestamp, pose):
+        if pose == libmyo.Pose.fist:
+            self.emg_enabled = True
+        elif pose == libmyo.Pose.fingers_spread:
+            myo.set_stream_emg(libmyo.StreamEmg.disabled)
+            self.emg_enabled = False
+            self.emg = None
+        self.pose = pose
+
+    def on_orientation_data(self, myo, timestamp, orientation):
+        self.current_orientation = orientation
+        if self.orientation != self.current_orientation:
+            self.orientation_change = True
+        if self.orientation_change == True:
+            change_x = self.orientation.x - self.current_orientation.x
+            change_y = self.orientation.y - self.current_orientation.y
+            if change_x < 0:
+                self.servo_control.WriteToSerial(89)
+            elif change_x > 0:
+                self.servo_control.WriteToSerial(-89)
+        self.current_orientation = self.orientation
+
+
+    def on_accelerometor_data(self, myo, timestamp, acceleration):
+        pass
+
+    def on_gyroscope_data(self, myo, timestamp, gyroscope):
+        pass
+
+    def on_emg_data(self, myo, timestamp, emg):
+        self.emg = emg
+
+    def on_unlock(self, myo, timestamp):
+        self.locked = False
+
+    def on_lock(self, myo, timestamp):
+        self.locked = True
+
+    def on_event(self, kind, event):
+        """
+        Called before any of the event callbacks.
+        """
+
+    def on_event_finished(self, kind, event):
+        """
+        Called after the respective event callbacks have been
+        invoked. This method is *always* triggered, even if one of
+        the callbacks requested the stop of the Hub.
+        """
+
+    def on_pair(self, myo, timestamp, firmware_version):
+        """
+        Called when a Myo armband is paired.
+        """
+
+    def on_unpair(self, myo, timestamp):
+        """
+        Called when a Myo armband is unpaired.
+        """
+
+    def on_disconnect(self, myo, timestamp):
+        """
+        Called when a Myo is disconnected.
+        """
+
+    def on_arm_sync(self, myo, timestamp, arm, x_direction, rotation,
+                    warmup_state):
+        """
+        Called when a Myo armband and an arm is synced.
+        """
+
+    def on_arm_unsync(self, myo, timestamp):
+        """
+        Called when a Myo armband and an arm is unsynced.
+        """
+
+    def on_battery_level_received(self, myo, timestamp, level):
+        """
+        Called when the requested battery level received.
+        """
+
+    def on_warmup_completed(self, myo, timestamp, warmup_result):
+        """
+        Called when the warmup completed.
+        """
+'''
 ###################################################################################################
 def main():
 
     client = OSCClient()
+    client.connect(("192.168.137.192", 9001))
     client.connect(("192.168.137.1", 9001))
     print(str(client))
 
@@ -78,7 +198,21 @@ def main():
     run = True
 
     # Setup Arduino
-    servo_controller = ServoControl()
+    use_arduino = True
+    if use_arduino:
+        servo_controller = ServoControl()
+       # try:
+        #    hub = libmyo.Hub()
+        #except MemoryError:
+        #    print("Myo Hub could not be created. Make sure Myo Connect is running.")
+        #    return
+
+        #hub.set_locking_policy(libmyo.LockingPolicy.none)
+        #myo_listener = Listener(servo_controller)
+        #hub.run(1000, myo_listener)
+
+    #Setup Myo
+
 
     # this method of reporting timeouts only works by convention
     # that before calling handle_request() field .timed_out is
@@ -135,7 +269,7 @@ def main():
         cv2.namedWindow("imgCanny", cv2.WINDOW_NORMAL)           # or use WINDOW_NORMAL to allow window resizing
 
         # detect circles in the image
-        circles = cv2.HoughCircles(imgCanny, cv.CV_HOUGH_GRADIENT, 1, 260, param1=30, param2=20, minRadius=0, maxRadius=0)
+        circles = cv2.HoughCircles(imgCanny, cv.CV_HOUGH_GRADIENT, 1, 260, param1=30, param2=10, minRadius=0, maxRadius=0)
         # print circles
 
         # ensure at least some circles were found
@@ -159,10 +293,19 @@ def main():
         message = OSCMessage("/cam")
         message.append(osc_circles)
         client.send(message)
-        #print(message)
+        if use_arduino:
+            if osc_circles is not None and osc_circles != []:
+                if osc_circles[0][0] > 180:
+                    servo_controller.WriteToSerial(-8)
+                else:
+                    servo_controller.WriteToSerial(9)
+        print(message)
     # end while
 
-    cv2.destroyAllWindows()                 # remove windows from memory
+    cv2.destroyAllWindows()     # remove windows from memory
+    if use_arduino:
+        print("Shutting down hub...")
+        #hub.shutdown()
 
     return
 
