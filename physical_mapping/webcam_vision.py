@@ -5,14 +5,40 @@ import cv2
 import numpy as np
 import os
 import cv2.cv as cv
-from OSC import OSCClient, OSCMessage
+from OSC import OSCClient, OSCMessage, OSCServer
 
 
 ###################################################################################################
 def main():
 
     client = OSCClient()
-    client.connect(("localhost", 7110))
+    client.connect(("192.168.137.1", 9001))
+    print(str(client))
+
+    server = OSCServer(("localhost", 7110))
+    server.timeout = 0
+    run = True
+
+    # this method of reporting timeouts only works by convention
+    # that before calling handle_request() field .timed_out is
+    # set to False
+    def handle_timeout(self):
+        self.timed_out = True
+
+    # funny python's way to add a method to an instance of a class
+    import types
+    server.handle_timeout = types.MethodType(handle_timeout, server)
+
+    def user_callback(path, tags, args, source):
+        # which user will be determined by path:
+        # we just throw away all slashes and join together what's left
+        user = ''.join(path.split("/"))
+        # tags will contain 'fff'
+        # args is a OSCMessage with data
+        # source is where the message came from (in case you need to reply)
+        print ("Now do something with", user, args[2], args[0], 1 - args[1])
+
+    server.addMsgHandler("/unity", user_callback)
 
     capWebcam = cv2.VideoCapture(0)         # declare a VideoCapture object and associate to webcam, 0 => use 1st webcam
 
@@ -51,18 +77,19 @@ def main():
             # loop over the (x, y) coordinates and radius of the circles
             for (x, y, r) in circles:
                 # time.sleep(0.5)
-                print "Column Number: "
-                print x
-                print "Row Number: "
-                print y
-                print "Radius is: "
-                print r
+                #print "Column Number: "
+                #print x
+                #print "Row Number: "
+                #print y
+                #print "Radius is: "
+                #print r
                 osc_circles.append((x,y))
         cv2.imshow("imgOriginal", imgOriginal)  # show windows
         cv2.imshow("imgCanny", imgCanny)
         message = OSCMessage("/cam")
         message.append(osc_circles)
         client.send(message)
+        #print(message)
     # end while
 
     cv2.destroyAllWindows()                 # remove windows from memory
